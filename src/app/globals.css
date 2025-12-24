@@ -267,7 +267,7 @@ body {
 .region-path-alert:hover,
 .region-path-alert-hover {
   fill: var(--pipboy-alert-red);
-  stroke: var(--pipboy-alert-red);
+  stroke: #ff6644;
   stroke-width: 2;
   animation: none;
 }
