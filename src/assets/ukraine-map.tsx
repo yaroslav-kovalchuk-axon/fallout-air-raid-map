@@ -2,6 +2,7 @@
 
 interface UkraineMapSVGProps {
   alertedRegions: string[];
+  hoveredRegion?: string | null;
   onRegionHover?: (regionId: string | null) => void;
   onRegionClick?: (regionId: string) => void;
 }
@@ -50,11 +51,17 @@ const REGION_PATHS: Record<string, string> = {
 
 export default function UkraineMapSVG({
   alertedRegions,
+  hoveredRegion,
   onRegionHover,
   onRegionClick,
 }: UkraineMapSVGProps) {
   const getRegionClass = (regionId: string) => {
     const isAlert = alertedRegions.includes(regionId);
+    const isHovered = hoveredRegion === regionId;
+
+    if (isHovered) {
+      return `region-path ${isAlert ? "region-path-alert-hover" : "region-path-safe-hover"}`;
+    }
     return `region-path ${isAlert ? "region-path-alert" : "region-path-safe"}`;
   };
 

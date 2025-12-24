@@ -50,6 +50,7 @@ export default function UkraineMap({ alertedRegions }: UkraineMapProps) {
         <div className="flex-1 flex items-center justify-center">
           <UkraineMapSVG
             alertedRegions={alertedRegions}
+            hoveredRegion={hoveredRegion}
             onRegionHover={setHoveredRegion}
             onRegionClick={(id) => console.log("Clicked:", id)}
           />

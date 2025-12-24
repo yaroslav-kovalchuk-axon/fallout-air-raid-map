@@ -38,7 +38,9 @@ export default function RegionList({
             <span
               className={
                 isAlert
-                  ? "glow-text-red"
+                  ? isHovered
+                    ? "glow-text-red-bright"
+                    : "glow-text-red"
                   : isHovered
                   ? "glow-text-bright"
                   : "glow-text"
