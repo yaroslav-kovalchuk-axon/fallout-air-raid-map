@@ -24,7 +24,9 @@ export default function RegionList({
         return (
           <div
             key={region.id}
-            className="region-list-item cursor-pointer transition-colors"
+            className={`region-list-item cursor-pointer transition-all origin-left ${
+              isHovered ? "scale-105" : ""
+            }`}
             onMouseEnter={() => onRegionHover(region.id)}
             onMouseLeave={() => onRegionHover(null)}
           >
@@ -34,13 +36,13 @@ export default function RegionList({
               }`}
             />
             <span
-              className={`transition-all ${
+              className={
                 isAlert
                   ? "glow-text-red"
                   : isHovered
-                  ? "glow-text-bright text-sm md:text-base"
+                  ? "glow-text-bright"
                   : "glow-text"
-              }`}
+              }
             >
               {region.nameUa}
             </span>
