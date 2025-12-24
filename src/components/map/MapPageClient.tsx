@@ -1,6 +1,8 @@
 "use client";
 
 import UkraineMap from "@/components/map/UkraineMap";
+import { ErrorBoundary } from "@/components/common/ErrorBoundary";
+import { DataSourceIndicator } from "@/components/common/DataSourceIndicator";
 import { useAlerts } from "@/hooks/useAlerts";
 
 export default function MapPageClient() {
@@ -8,8 +10,8 @@ export default function MapPageClient() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <span className="text-lg font-[family-name:var(--font-pipboy)] glow-text animate-pulse">
+      <div className="flex h-full items-center justify-center">
+        <span className="glow-text animate-pulse font-[family-name:var(--font-pipboy)] text-lg">
           ЗАВАНТАЖЕННЯ ДАНИХ...
         </span>
       </div>
@@ -17,17 +19,17 @@ export default function MapPageClient() {
   }
 
   return (
-    <div className="flex flex-col h-full relative">
-      {/* Data source indicator */}
-      <div className="text-xs font-[family-name:var(--font-pipboy)] opacity-50 text-right mb-1">
-        {source === "api" ? (
-          <span className="glow-text">● LIVE</span>
-        ) : (
-          <span className="glow-text-red">● DEMO</span>
-        )}
+    <div className="relative flex h-full flex-col">
+      {/* Data source indicator - absolute position */}
+      <div className="absolute top-0 right-0 z-10">
+        <div className="flex items-center gap-2 font-[family-name:var(--font-pipboy)] text-xs">
+          <DataSourceIndicator source={source} />
+        </div>
       </div>
 
-      <UkraineMap alertedRegions={alertedRegionIds} />
+      <ErrorBoundary>
+        <UkraineMap alertedRegions={alertedRegionIds} />
+      </ErrorBoundary>
     </div>
   );
 }

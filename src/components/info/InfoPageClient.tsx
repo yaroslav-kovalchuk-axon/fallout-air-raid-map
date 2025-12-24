@@ -1,58 +1,60 @@
 "use client";
 
 import AlertStatus from "@/components/info/AlertStatus";
-import BatteryStatus from "@/components/info/BatteryStatus";
+import StatisticsPanel from "@/components/info/StatisticsPanel";
 import MessageLog from "@/components/info/MessageLog";
 import TimelineBar from "@/components/info/TimelineBar";
+import { ErrorBoundary } from "@/components/common/ErrorBoundary";
+import { DataSourceIndicator } from "@/components/common/DataSourceIndicator";
 import { useAlerts } from "@/hooks/useAlerts";
-import { MOCK_MESSAGES } from "@/data/mockMessages";
+import { useAlertHistory } from "@/hooks/useAlertHistory";
 
 export default function InfoPageClient() {
-  const { alertCount, isLoading, source, lastUpdate } = useAlerts();
+  const {
+    alertCount,
+    isLoading: alertsLoading,
+    source: alertsSource,
+  } = useAlerts();
+  const {
+    messages,
+    isLoading: historyLoading,
+    source: historySource,
+  } = useAlertHistory();
   const isAlertActive = alertCount > 0;
 
-  // Using mock messages for now
-  // TODO: Add real-time messages via API in the future
-  const sortedMessages = [...MOCK_MESSAGES].sort(
-    (a, b) => b.timestamp.getTime() - a.timestamp.getTime()
-  );
+  // Use history source when available, fallback to alerts
+  const source = historySource || alertsSource;
 
-  if (isLoading) {
+  if (alertsLoading || historyLoading) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <span className="text-lg font-[family-name:var(--font-pipboy)] glow-text animate-pulse">
-          ЗАВАНТАЖЕННЯ ДАНИХ...
-        </span>
+      <div className="flex h-full items-center justify-center">
+        <div className="loading-container">
+          <div className="loading-spinner" />
+          <span className="glow-text mt-4 font-[family-name:var(--font-pipboy)] text-lg">
+            ЗАВАНТАЖЕННЯ ДАНИХ...
+          </span>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Data source and last update indicator */}
-      <div className="flex justify-between items-start mb-2">
-        <AlertStatus isActive={isAlertActive} alertCount={alertCount} />
-        <div className="text-xs font-[family-name:var(--font-pipboy)] opacity-50 text-right shrink-0">
-          {source === "api" ? (
-            <span className="glow-text">● LIVE</span>
-          ) : (
-            <span className="glow-text-red">● DEMO</span>
-          )}
-          {lastUpdate && (
-            <div className="mt-1">
-              {lastUpdate.toLocaleTimeString("uk-UA", {
-                hour: "2-digit",
-                minute: "2-digit",
-                second: "2-digit",
-              })}
-            </div>
-          )}
+    <div className="animate-fade-in relative flex h-full flex-col">
+      {/* Data source indicator - absolute position */}
+      <div className="absolute top-0 right-0 z-10">
+        <div className="flex items-center gap-2 font-[family-name:var(--font-pipboy)] text-xs">
+          <DataSourceIndicator source={source} />
         </div>
       </div>
 
-      <BatteryStatus />
-      <MessageLog messages={sortedMessages} />
-      <TimelineBar />
+      <ErrorBoundary>
+        {/* Alert status */}
+        <AlertStatus isActive={isAlertActive} alertCount={alertCount} />
+
+        <StatisticsPanel messages={messages} alertCount={alertCount} />
+        <MessageLog messages={messages} />
+        <TimelineBar messages={messages} />
+      </ErrorBoundary>
     </div>
   );
 }

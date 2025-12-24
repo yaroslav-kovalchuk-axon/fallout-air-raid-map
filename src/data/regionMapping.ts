@@ -1,48 +1,52 @@
-// Mapping between API region IDs (alerts.com.ua) and project region IDs
-// API returns numeric IDs, project uses string identifiers
+// Mapping between alerts.in.ua API region UIDs and project region IDs
+// API returns numeric UIDs, project uses string identifiers
 
-export const API_TO_PROJECT_REGION: Record<number, string> = {
-  1: "vinnytsia",       // Vinnytsia Oblast
-  2: "volyn",           // Volyn Oblast
-  3: "dnipro",          // Dnipropetrovsk Oblast
-  4: "donetsk",         // Donetsk Oblast
-  5: "zhytomyr",        // Zhytomyr Oblast
-  6: "zakarpattia",     // Zakarpattia Oblast
-  7: "zaporizhzhia",    // Zaporizhzhia Oblast
-  8: "ivano-frankivsk", // Ivano-Frankivsk Oblast
-  9: "kyiv-oblast",     // Kyiv Oblast
-  10: "kirovohrad",     // Kirovohrad Oblast
-  11: "luhansk",        // Luhansk Oblast
-  12: "lviv",           // Lviv Oblast
-  13: "mykolaiv",       // Mykolaiv Oblast
-  14: "odesa",          // Odesa Oblast
-  15: "poltava",        // Poltava Oblast
-  16: "rivne",          // Rivne Oblast
-  17: "sumy",           // Sumy Oblast
-  18: "ternopil",       // Ternopil Oblast
-  19: "kharkiv",        // Kharkiv Oblast
-  20: "kherson",        // Kherson Oblast
-  21: "khmelnytskyi",   // Khmelnytskyi Oblast
-  22: "cherkasy",       // Cherkasy Oblast
-  23: "chernivtsi",     // Chernivtsi Oblast
-  24: "chernihiv",      // Chernihiv Oblast
-  25: "kyiv-city",      // Kyiv City
+// alerts.in.ua UID to project region ID mapping
+const UID_TO_PROJECT_REGION: Record<number, string> = {
+  3: "khmelnytskyi", // Khmelnytskyi Oblast
+  4: "vinnytsia", // Vinnytsia Oblast
+  5: "rivne", // Rivne Oblast
+  8: "volyn", // Volyn Oblast
+  9: "dnipro", // Dnipropetrovsk Oblast
+  10: "zhytomyr", // Zhytomyr Oblast
+  11: "zakarpattia", // Zakarpattia Oblast
+  12: "zaporizhzhia", // Zaporizhzhia Oblast
+  13: "ivano-frankivsk", // Ivano-Frankivsk Oblast
+  14: "kyiv-oblast", // Kyiv Oblast
+  15: "kirovohrad", // Kirovohrad Oblast
+  16: "luhansk", // Luhansk Oblast (occupied)
+  17: "mykolaiv", // Mykolaiv Oblast
+  18: "odesa", // Odesa Oblast
+  19: "poltava", // Poltava Oblast
+  20: "sumy", // Sumy Oblast
+  21: "ternopil", // Ternopil Oblast
+  22: "kharkiv", // Kharkiv Oblast
+  23: "kherson", // Kherson Oblast
+  24: "cherkasy", // Cherkasy Oblast
+  25: "chernihiv", // Chernihiv Oblast
+  26: "chernivtsi", // Chernivtsi Oblast
+  27: "lviv", // Lviv Oblast
+  28: "donetsk", // Donetsk Oblast
+  29: "crimea", // Crimea (occupied)
+  30: "sevastopol", // Sevastopol (occupied)
+  31: "kyiv-city", // Kyiv City
 };
 
-// Reverse mapping: project ID → API ID
-export const PROJECT_TO_API_REGION: Record<string, number> = Object.fromEntries(
-  Object.entries(API_TO_PROJECT_REGION).map(([apiId, projectId]) => [projectId, Number(apiId)])
-);
+// Occupied territories - always show as alert
+export const OCCUPIED_REGIONS: string[] = [
+  "crimea",
+  "sevastopol",
+  "luhansk",
+  "donetsk",
+];
 
-// Regions that exist in project but not in API
-export const REGIONS_WITHOUT_API: string[] = ["crimea", "sevastopol"];
-
-// Convert API region ID to project ID
-export function apiToProjectRegionId(apiId: number): string | null {
-  return API_TO_PROJECT_REGION[apiId] ?? null;
+// Convert API UID to project ID
+export function uidToProjectRegionId(uid: number | string): string | null {
+  const numericUid = typeof uid === "string" ? parseInt(uid, 10) : uid;
+  return UID_TO_PROJECT_REGION[numericUid] ?? null;
 }
 
-// Convert project ID to API region ID
-export function projectToApiRegionId(projectId: string): number | null {
-  return PROJECT_TO_API_REGION[projectId] ?? null;
+// Get all API UIDs
+export function getAllUids(): number[] {
+  return Object.keys(UID_TO_PROJECT_REGION).map(Number);
 }

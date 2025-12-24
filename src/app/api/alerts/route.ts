@@ -1,38 +1,49 @@
 import { NextResponse } from "next/server";
-import { apiToProjectRegionId } from "@/data/regionMapping";
-import { MOCK_ALERTS } from "@/data/mockAlerts";
+import { uidToProjectRegionId, OCCUPIED_REGIONS } from "@/data/regionMapping";
+import {
+  AlertsInUaActiveResponseSchema,
+  mapAlertType,
+  type AlertType,
+  type AlertsApiResponse,
+} from "@/schemas";
+import { POLLING_CONFIG } from "@/config/polling";
 
-const API_BASE_URL = process.env.ALERTS_API_URL || "https://alerts.com.ua";
-const API_KEY = process.env.ALERTS_API_KEY || "";
+const API_BASE_URL = process.env.ALERTS_API_URL || "";
+const API_TOKEN = process.env.ALERTS_API_TOKEN || "";
 
-// Response caching
-let cachedData: { data: unknown; timestamp: number } | null = null;
-const CACHE_TTL = 30 * 1000; // 30 seconds
+// Response caching to avoid rate limits
+let cachedData: { data: AlertsApiResponse; timestamp: number } | null = null;
 
 export async function GET() {
-  // If no API key, return mock data
-  if (!API_KEY) {
-    return NextResponse.json({
-      alerts: MOCK_ALERTS.map((alert) => ({
-        regionId: alert.regionId,
-        isActive: alert.isActive,
-        alertType: alert.alertType,
-        startTime: alert.startTime?.toISOString() || null,
-      })),
-      source: "mock",
-      lastUpdate: new Date().toISOString(),
-    });
+  // Validate API configuration
+  if (!API_BASE_URL) {
+    console.error("ALERTS_API_URL is not configured");
+    return NextResponse.json(
+      { error: "ALERTS_API_URL is not configured" },
+      { status: 500 },
+    );
+  }
+
+  if (!API_TOKEN) {
+    console.error("ALERTS_API_TOKEN is not configured");
+    return NextResponse.json(
+      { error: "ALERTS_API_TOKEN is not configured" },
+      { status: 500 },
+    );
   }
 
   // Check cache
-  if (cachedData && Date.now() - cachedData.timestamp < CACHE_TTL) {
+  if (
+    cachedData &&
+    Date.now() - cachedData.timestamp < POLLING_CONFIG.ALERTS_CACHE_TTL_MS
+  ) {
     return NextResponse.json(cachedData.data);
   }
 
   try {
-    const response = await fetch(`${API_BASE_URL}/api/states`, {
+    const response = await fetch(`${API_BASE_URL}/v1/alerts/active.json`, {
       headers: {
-        "X-API-Key": API_KEY,
+        Authorization: `Bearer ${API_TOKEN}`,
       },
     });
 
@@ -40,34 +51,52 @@ export async function GET() {
       throw new Error(`API error: ${response.status}`);
     }
 
-    const apiData = await response.json();
+    const rawData = await response.json();
 
-    // Transform data
-    const alerts = apiData.states
-      .filter((state: { alert: boolean }) => state.alert)
-      .map((state: { id: number; changed: string }) => {
-        const projectRegionId = apiToProjectRegionId(state.id);
+    // Validate API response with zod
+    const parseResult = AlertsInUaActiveResponseSchema.safeParse(rawData);
+    if (!parseResult.success) {
+      console.error("Invalid API response:", parseResult.error.issues);
+      throw new Error("Invalid API response format");
+    }
+
+    const apiData = parseResult.data;
+
+    // Filter only oblast-level alerts and transform to project format
+    const alerts = apiData.alerts
+      .filter((alert) => alert.location_type === "oblast")
+      .map((alert) => {
+        const projectRegionId = uidToProjectRegionId(alert.location_uid);
+        if (!projectRegionId) return null;
+
         return {
           regionId: projectRegionId,
-          isActive: true,
-          alertType: "air_raid",
-          startTime: state.changed || null,
+          isActive: alert.finished_at === null,
+          alertType: mapAlertType(alert.alert_type),
+          startTime: alert.started_at || null,
         };
       })
-      .filter((alert: { regionId: string | null }) => alert.regionId !== null);
+      .filter((alert): alert is NonNullable<typeof alert> => alert !== null);
 
-    // Add occupied territories (Crimea, Sevastopol) - permanent alert
-    const occupiedAlerts = [
-      { regionId: "crimea", isActive: true, alertType: "air_raid", startTime: null },
-      { regionId: "sevastopol", isActive: true, alertType: "air_raid", startTime: null },
-    ];
+    // Get set of regions that already have alerts
+    const alertedRegionIds = new Set(alerts.map((a) => a.regionId));
+
+    // Add occupied territories that don't already have alerts from API
+    const occupiedAlerts = OCCUPIED_REGIONS.filter(
+      (regionId) => !alertedRegionIds.has(regionId),
+    ).map((regionId) => ({
+      regionId,
+      isActive: true,
+      alertType: "air_raid" as AlertType,
+      startTime: null,
+    }));
 
     const allAlerts = [...alerts, ...occupiedAlerts];
 
-    const responseData = {
+    const responseData: AlertsApiResponse = {
       alerts: allAlerts,
       source: "api",
-      lastUpdate: apiData.last_update || new Date().toISOString(),
+      lastUpdate: apiData.meta?.last_updated_at || new Date().toISOString(),
     };
 
     // Update cache
@@ -78,19 +107,23 @@ export async function GET() {
 
     return NextResponse.json(responseData);
   } catch (error) {
-    console.error("Failed to fetch from alerts API:", error);
+    console.error("Failed to fetch from alerts.in.ua API:", error);
 
-    // Fallback to mock data
+    // If we have cached data, return it even if expired
+    if (cachedData) {
+      return NextResponse.json({
+        ...cachedData.data,
+        source: "cache",
+        error: "API unavailable, using cached data",
+      } satisfies AlertsApiResponse);
+    }
+
+    // No cached data available - return empty response with cache source
     return NextResponse.json({
-      alerts: MOCK_ALERTS.map((alert) => ({
-        regionId: alert.regionId,
-        isActive: alert.isActive,
-        alertType: alert.alertType,
-        startTime: alert.startTime?.toISOString() || null,
-      })),
-      source: "mock",
-      error: "API unavailable, using cached data",
+      alerts: [],
+      source: "cache",
       lastUpdate: new Date().toISOString(),
-    });
+      error: "Failed to fetch alerts and no cached data available",
+    } satisfies AlertsApiResponse);
   }
 }

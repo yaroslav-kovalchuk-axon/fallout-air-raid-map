@@ -1,42 +1,39 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { AlertState } from "@/types";
+import {
+  parseAlertsResponse,
+  isValidAlertType,
+  type AlertType,
+} from "@/schemas";
+import { POLLING_CONFIG } from "@/config/polling";
 
-interface AlertsApiResponse {
-  alerts: Array<{
-    regionId: string;
-    isActive: boolean;
-    alertType: string;
-    startTime: string | null;
-  }>;
-  source: "api" | "mock";
-  lastUpdate: string;
-  error?: string;
+// Local alert state with Date instead of string for startTime
+interface LocalAlertState {
+  regionId: string;
+  isActive: boolean;
+  alertType: AlertType;
+  startTime: Date | null;
 }
 
 interface UseAlertsResult {
-  alerts: AlertState[];
+  alerts: LocalAlertState[];
   alertedRegionIds: string[];
   alertCount: number;
   isLoading: boolean;
   error: string | null;
-  source: "api" | "mock" | null;
+  source: "api" | "cache" | null;
   lastUpdate: Date | null;
   refresh: () => Promise<void>;
 }
 
-const POLLING_INTERVAL = 30000; // 30 seconds
-const SSE_RECONNECT_DELAY = 5000; // 5 seconds
-
 export function useAlerts(): UseAlertsResult {
-  const [alerts, setAlerts] = useState<AlertState[]>([]);
+  const [alerts, setAlerts] = useState<LocalAlertState[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [source, setSource] = useState<"api" | "mock" | null>(null);
+  const [source, setSource] = useState<"api" | "cache" | null>(null);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
 
-  const eventSourceRef = useRef<EventSource | null>(null);
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Fetch alerts via HTTP
@@ -47,12 +44,23 @@ export function useAlerts(): UseAlertsResult {
         throw new Error(`HTTP error: ${response.status}`);
       }
 
-      const data: AlertsApiResponse = await response.json();
+      const rawData = await response.json();
 
-      const transformedAlerts: AlertState[] = data.alerts.map((alert) => ({
+      // Validate response with zod
+      const parseResult = parseAlertsResponse(rawData);
+      if (!parseResult.success) {
+        console.error("Invalid API response:", parseResult.error.issues);
+        throw new Error("Invalid API response format");
+      }
+
+      const data = parseResult.data;
+      const transformedAlerts = data.alerts.map((alert) => ({
         regionId: alert.regionId,
         isActive: alert.isActive,
-        alertType: alert.alertType as AlertState["alertType"],
+        // Validate alert type with type guard
+        alertType: isValidAlertType(alert.alertType)
+          ? alert.alertType
+          : ("air_raid" as AlertType),
         startTime: alert.startTime ? new Date(alert.startTime) : null,
       }));
 
@@ -67,98 +75,27 @@ export function useAlerts(): UseAlertsResult {
     }
   }, []);
 
-  // Connect to SSE
-  const connectSSE = useCallback(() => {
-    if (eventSourceRef.current) {
-      eventSourceRef.current.close();
-    }
-
-    const eventSource = new EventSource("/api/alerts/stream");
-    eventSourceRef.current = eventSource;
-
-    eventSource.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-
-        if (data.error) {
-          console.warn("SSE error:", data.error);
-          return;
-        }
-
-        // Update state for specific region
-        setAlerts((prevAlerts) => {
-          const existingIndex = prevAlerts.findIndex(
-            (a) => a.regionId === data.regionId
-          );
-
-          const updatedAlert: AlertState = {
-            regionId: data.regionId,
-            isActive: data.isActive,
-            alertType: data.alertType,
-            startTime: data.startTime ? new Date(data.startTime) : null,
-          };
-
-          if (existingIndex >= 0) {
-            // Update existing alert
-            const newAlerts = [...prevAlerts];
-            if (data.isActive) {
-              newAlerts[existingIndex] = updatedAlert;
-            } else {
-              // Remove alert if inactive
-              newAlerts.splice(existingIndex, 1);
-            }
-            return newAlerts;
-          } else if (data.isActive) {
-            // Add new alert
-            return [...prevAlerts, updatedAlert];
-          }
-
-          return prevAlerts;
-        });
-
-        setLastUpdate(new Date());
-      } catch {
-        console.error("Failed to parse SSE event");
-      }
-    };
-
-    eventSource.onerror = () => {
-      console.warn("SSE connection error, reconnecting...");
-      eventSource.close();
-      eventSourceRef.current = null;
-
-      // Reconnect after delay
-      setTimeout(connectSSE, SSE_RECONNECT_DELAY);
-    };
-
-    eventSource.onopen = () => {
-      console.log("SSE connected");
-      setSource("api");
-    };
-  }, []);
-
-  // Initial load
+  // Initial load and polling
   useEffect(() => {
     fetchAlerts();
 
-    // Try to connect to SSE
-    connectSSE();
-
-    // Fallback polling if SSE doesn't work
-    pollingIntervalRef.current = setInterval(fetchAlerts, POLLING_INTERVAL);
+    // Polling for updates (no SSE available in alerts.in.ua)
+    pollingIntervalRef.current = setInterval(
+      fetchAlerts,
+      POLLING_CONFIG.ALERTS_INTERVAL_MS,
+    );
 
     return () => {
-      if (eventSourceRef.current) {
-        eventSourceRef.current.close();
-      }
       if (pollingIntervalRef.current) {
         clearInterval(pollingIntervalRef.current);
       }
     };
-  }, [fetchAlerts, connectSSE]);
+  }, [fetchAlerts]);
 
   // Computed values
-  const alertedRegionIds = alerts.filter((a) => a.isActive).map((a) => a.regionId);
+  const alertedRegionIds = alerts
+    .filter((a) => a.isActive)
+    .map((a) => a.regionId);
   const alertCount = alertedRegionIds.length;
 
   return {
