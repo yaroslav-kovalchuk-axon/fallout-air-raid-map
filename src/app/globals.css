@@ -261,13 +261,14 @@ body {
 
 .region-path-alert {
   fill: var(--pipboy-alert-red-dim);
+  stroke: #ff6644;
   animation: region-pulse 1s ease-in-out infinite;
 }
 
 .region-path-alert:hover,
 .region-path-alert-hover {
   fill: var(--pipboy-alert-red);
-  stroke: #ff6644;
+  stroke: #ffcc00;
   stroke-width: 2;
   animation: none;
 }
