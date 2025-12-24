@@ -1,26 +1,370 @@
 @import "tailwindcss";
 
+/* ===== PIP-BOY COLOR PALETTE ===== */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Primary colors */
+  --pipboy-green: #00ff00;
+  --pipboy-green-bright: #33ff33;
+  --pipboy-green-dim: #00aa00;
+  --pipboy-green-dark: #006600;
+  --pipboy-dark: #0a0a0a;
+  --pipboy-darker: #050505;
+
+  /* Alert colors */
+  --pipboy-alert-red: #ff3300;
+  --pipboy-alert-red-dim: #aa2200;
+  --pipboy-amber: #ffaa00;
+
+  /* Glow effects */
+  --glow-small: 0 0 2px var(--pipboy-green), 0 0 4px var(--pipboy-green);
+  --glow-medium: 0 0 4px var(--pipboy-green), 0 0 8px var(--pipboy-green), 0 0 12px var(--pipboy-green);
+  --glow-large: 0 0 8px var(--pipboy-green), 0 0 16px var(--pipboy-green), 0 0 24px var(--pipboy-green);
+
+  --glow-red-small: 0 0 2px var(--pipboy-alert-red), 0 0 4px var(--pipboy-alert-red);
+  --glow-red-medium: 0 0 4px var(--pipboy-alert-red), 0 0 8px var(--pipboy-alert-red), 0 0 12px var(--pipboy-alert-red);
+
+  /* Background */
+  --background: var(--pipboy-dark);
+  --foreground: var(--pipboy-green);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-pipboy-green: var(--pipboy-green);
+  --color-pipboy-green-bright: var(--pipboy-green-bright);
+  --color-pipboy-green-dim: var(--pipboy-green-dim);
+  --color-pipboy-green-dark: var(--pipboy-green-dark);
+  --color-pipboy-dark: var(--pipboy-dark);
+  --color-pipboy-alert-red: var(--pipboy-alert-red);
+  --color-pipboy-alert-red-dim: var(--pipboy-alert-red-dim);
+  --color-pipboy-amber: var(--pipboy-amber);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* ===== BASE STYLES ===== */
+html, body {
+  background: var(--pipboy-darker);
+  color: var(--pipboy-green);
+  min-height: 100vh;
+  overflow-x: hidden;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-pipboy), 'Courier New', monospace;
+}
+
+/* ===== CRT SCANLINE EFFECT ===== */
+.crt-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1000;
+}
+
+.crt-overlay::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 1px,
+    rgba(0, 0, 0, 0.25) 1px,
+    rgba(0, 0, 0, 0.25) 2px
+  );
+  animation: scanline-move 10s linear infinite;
+}
+
+.crt-overlay::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 0%,
+    transparent 60%,
+    rgba(0, 0, 0, 0.4) 100%
+  );
+}
+
+/* ===== CRT FLICKER ANIMATION ===== */
+@keyframes crt-flicker {
+  0% { opacity: 0.98; }
+  5% { opacity: 0.96; }
+  10% { opacity: 0.99; }
+  15% { opacity: 0.97; }
+  20% { opacity: 0.98; }
+  50% { opacity: 0.985; }
+  80% { opacity: 0.97; }
+  100% { opacity: 0.98; }
+}
+
+@keyframes scanline-move {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(4px); }
+}
+
+/* ===== PIP-BOY FRAME ===== */
+.pipboy-frame {
+  background: linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 50%, #1a1a1a 100%);
+  border: 4px solid #333;
+  border-radius: 20px;
+  padding: 12px;
+  box-shadow:
+    inset 0 0 30px rgba(0, 255, 0, 0.05),
+    0 0 40px rgba(0, 0, 0, 0.8),
+    0 4px 20px rgba(0, 0, 0, 0.6);
+  position: relative;
+}
+
+.pipboy-frame::before {
+  content: '';
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  right: 4px;
+  bottom: 4px;
+  border: 2px solid #222;
+  border-radius: 16px;
+  pointer-events: none;
+}
+
+.pipboy-screen {
+  background: var(--pipboy-dark);
+  border-radius: 12px;
+  overflow: hidden;
+  position: relative;
+  animation: crt-flicker 0.15s infinite;
+  box-shadow:
+    inset 0 0 60px rgba(0, 255, 0, 0.03),
+    inset 0 0 20px rgba(0, 0, 0, 0.5);
+}
+
+/* ===== GLOW TEXT EFFECTS ===== */
+.glow-text {
+  color: var(--pipboy-green);
+  text-shadow: var(--glow-small);
+}
+
+.glow-text-bright {
+  color: var(--pipboy-green-bright);
+  text-shadow: var(--glow-medium);
+}
+
+.glow-text-intense {
+  color: var(--pipboy-green-bright);
+  text-shadow: var(--glow-large);
+}
+
+.glow-text-red {
+  color: var(--pipboy-alert-red);
+  text-shadow: var(--glow-red-small);
+}
+
+.glow-text-red-bright {
+  color: var(--pipboy-alert-red);
+  text-shadow: var(--glow-red-medium);
+}
+
+/* ===== PULSING STATUS DOT ===== */
+@keyframes pulse-green {
+  0%, 100% {
+    opacity: 1;
+    box-shadow: 0 0 4px var(--pipboy-green), 0 0 8px var(--pipboy-green);
+  }
+  50% {
+    opacity: 0.6;
+    box-shadow: 0 0 2px var(--pipboy-green), 0 0 4px var(--pipboy-green);
+  }
+}
+
+@keyframes pulse-red {
+  0%, 100% {
+    opacity: 1;
+    box-shadow: 0 0 6px var(--pipboy-alert-red), 0 0 12px var(--pipboy-alert-red);
+  }
+  50% {
+    opacity: 0.7;
+    box-shadow: 0 0 3px var(--pipboy-alert-red), 0 0 6px var(--pipboy-alert-red);
+  }
+}
+
+.status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--pipboy-green);
+  animation: pulse-green 1.5s ease-in-out infinite;
+}
+
+.status-dot-alert {
+  background: var(--pipboy-alert-red);
+  animation: pulse-red 0.8s ease-in-out infinite;
+}
+
+/* ===== NAVIGATION TABS ===== */
+.nav-tab {
+  color: var(--pipboy-green-dim);
+  text-shadow: 0 0 2px var(--pipboy-green-dim);
+  transition: all 0.2s ease;
+  padding: 4px 12px;
+  border-bottom: 2px solid transparent;
+}
+
+.nav-tab:hover {
+  color: var(--pipboy-green);
+  text-shadow: var(--glow-small);
+}
+
+.nav-tab-active {
+  color: var(--pipboy-green-bright);
+  text-shadow: var(--glow-medium);
+  border-bottom: 2px solid var(--pipboy-green);
+}
+
+/* ===== MESSAGE LOG ===== */
+.message-log {
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.message-log-entry {
+  padding: 4px 0;
+  border-bottom: 1px solid rgba(0, 255, 0, 0.1);
+}
+
+.message-log-timestamp {
+  color: var(--pipboy-green-dim);
+}
+
+/* ===== MAP REGION STYLES ===== */
+.region-path {
+  stroke: var(--pipboy-green-dark);
+  stroke-width: 1;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.region-path-safe {
+  fill: var(--pipboy-green-dark);
+}
+
+.region-path-safe:hover {
+  fill: var(--pipboy-green-dim);
+  stroke: var(--pipboy-green);
+  stroke-width: 2;
+}
+
+.region-path-alert {
+  fill: var(--pipboy-alert-red-dim);
+  animation: region-pulse 1s ease-in-out infinite;
+}
+
+.region-path-alert:hover {
+  fill: var(--pipboy-alert-red);
+  stroke: var(--pipboy-alert-red);
+  stroke-width: 2;
+}
+
+@keyframes region-pulse {
+  0%, 100% { opacity: 0.9; }
+  50% { opacity: 0.7; }
+}
+
+/* ===== REGION LIST ===== */
+.region-list-item {
+  padding: 2px 0;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.region-indicator {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.region-indicator-safe {
+  background: var(--pipboy-green-dim);
+}
+
+.region-indicator-alert {
+  background: var(--pipboy-alert-red);
+  animation: pulse-red 0.8s ease-in-out infinite;
+}
+
+/* ===== TIMELINE BAR ===== */
+.timeline-bar {
+  height: 20px;
+  background: linear-gradient(
+    to right,
+    var(--pipboy-green-dark) 0%,
+    var(--pipboy-green-dim) 20%,
+    var(--pipboy-green) 40%,
+    var(--pipboy-green) 60%,
+    var(--pipboy-green-dim) 80%,
+    var(--pipboy-green-dark) 100%
+  );
+  position: relative;
+}
+
+.timeline-marker {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--pipboy-green-bright);
+  box-shadow: 0 0 6px var(--pipboy-green);
+}
+
+/* ===== VAULT BOY ASCII ===== */
+.vault-boy-container {
+  color: var(--pipboy-green);
+  text-shadow: var(--glow-small);
+  font-size: 10px;
+  line-height: 1.1;
+  white-space: pre;
+  font-family: monospace;
+}
+
+/* ===== SCROLLBAR STYLING ===== */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--pipboy-dark);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--pipboy-green-dark);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--pipboy-green-dim);
+}
+
+/* ===== UTILITY CLASSES ===== */
+.border-pipboy {
+  border-color: var(--pipboy-green-dark);
+}
+
+.border-pipboy-bright {
+  border-color: var(--pipboy-green);
+}
+
+.bg-pipboy-dark {
+  background-color: var(--pipboy-dark);
+}
+
+.bg-pipboy-darker {
+  background-color: var(--pipboy-darker);
 }
