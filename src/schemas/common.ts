@@ -36,22 +36,16 @@ export const MESSAGE_TYPES = [
   "info",
 ] as const;
 
-export const IOT_STATUSES = ["A", "P", "N"] as const;
-
 // === Branded Types для type-safety ===
-export const RegionIdSchema = z.string().brand<"RegionId">();
-export type RegionId = z.infer<typeof RegionIdSchema>;
-
 export const LocationUidSchema = z.string().brand<"LocationUid">();
-export type LocationUid = z.infer<typeof LocationUidSchema>;
 
 export const AlertIdSchema = z.number().brand<"AlertId">();
-export type AlertId = z.infer<typeof AlertIdSchema>;
 
 // === DateTime валідація ===
 // API може повертати дати з або без timezone offset
-export const ISODateTimeSchema = z.string().refine(
-  (val) => !isNaN(Date.parse(val)),
-  { message: "Invalid datetime string" },
-);
+export const ISODateTimeSchema = z
+  .string()
+  .refine((val) => !isNaN(Date.parse(val)), {
+    message: "Invalid datetime string",
+  });
 export const NullableISODateTimeSchema = ISODateTimeSchema.nullable();

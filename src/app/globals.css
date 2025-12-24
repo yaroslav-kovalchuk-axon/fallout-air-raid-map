@@ -282,8 +282,8 @@ body {
 
 /* ===== MAP REGION STYLES ===== */
 .region-path {
-  stroke: var(--pipboy-green-dark);
-  stroke-width: 1;
+  stroke: #0a0a0a;
+  stroke-width: 2;
   transition: all 0.3s ease;
   cursor: pointer;
 }
@@ -296,12 +296,13 @@ body {
 .region-path-safe-hover {
   fill: var(--pipboy-green-dim);
   stroke: var(--pipboy-green);
-  stroke-width: 2;
+  stroke-width: 3;
 }
 
 .region-path-alert {
   fill: var(--pipboy-alert-red-dim);
-  stroke: #ff6644;
+  stroke: #0a0a0a;
+  stroke-width: 2;
   animation: region-pulse 1s ease-in-out infinite;
 }
 
@@ -309,7 +310,7 @@ body {
 .region-path-alert-hover {
   fill: var(--pipboy-alert-red);
   stroke: #ffcc00;
-  stroke-width: 2;
+  stroke-width: 3;
   animation: none;
 }
 
@@ -741,9 +742,9 @@ body {
   min-width: 0;
 }
 
-.scroll-to-bottom-btn {
+.scroll-to-top-btn {
   position: absolute;
-  bottom: 8px;
+  top: 32px;
   left: 50%;
   transform: translateX(-50%);
   background: var(--pipboy-dark);
@@ -753,12 +754,12 @@ body {
   border-radius: 12px;
   font-size: 11px;
   cursor: pointer;
-  animation: fade-in 0.2s ease-out;
   box-shadow: 0 0 8px var(--pipboy-green);
   font-family: var(--font-pipboy), monospace;
+  z-index: 10;
 }
 
-.scroll-to-bottom-btn:hover {
+.scroll-to-top-btn:hover {
   background: var(--pipboy-green-dark);
 }
 
@@ -993,9 +994,12 @@ body {
 /* ===== REGION INFO PANEL ===== */
 .region-info-panel {
   position: absolute;
+  left: 0;
+  right: 0;
   bottom: 60px;
-  left: 50%;
-  transform: translateX(-50%);
+  margin-left: auto;
+  margin-right: auto;
+  width: fit-content;
   background: rgba(10, 10, 10, 0.95);
   border: 2px solid var(--pipboy-green-dark);
   border-radius: 8px;

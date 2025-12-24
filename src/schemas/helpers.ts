@@ -1,4 +1,3 @@
-import type { z } from "zod";
 import type { AlertType } from "./alerts-internal";
 import {
   AlertTypeSchema,
@@ -23,11 +22,6 @@ export function mapAlertType(apiType: string): AlertType {
 export function isValidAlertType(type: string): type is AlertType {
   return AlertTypeSchema.safeParse(type).success;
 }
-
-// === Parse Results ===
-export type ParseResult<T> =
-  | { success: true; data: T }
-  | { success: false; error: z.ZodError };
 
 export function parseAlertsResponse(
   data: unknown,

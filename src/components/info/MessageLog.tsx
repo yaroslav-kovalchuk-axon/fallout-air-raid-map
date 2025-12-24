@@ -67,31 +67,33 @@ function getThreatLabel(level: "high" | "medium" | "low" | "clear"): string {
 
 export default function MessageLog({ messages }: MessageLogProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const [isAutoScroll, setIsAutoScroll] = useState(true);
+  const [isAtTop, setIsAtTop] = useState(true);
   const prevMessagesLength = useRef(messages.length);
 
-  // Auto-scroll to bottom when new messages arrive
+  // Reverse messages so newest are at the top
+  const reversedMessages = [...messages].reverse();
+
+  // Auto-scroll to top when new messages arrive
   useEffect(() => {
     if (
-      isAutoScroll &&
+      isAtTop &&
       scrollRef.current &&
       messages.length > prevMessagesLength.current
     ) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      scrollRef.current.scrollTop = 0;
     }
     prevMessagesLength.current = messages.length;
-  }, [messages, isAutoScroll]);
+  }, [messages, isAtTop]);
 
   // Detect manual scroll to disable auto-scroll
   const handleScroll = () => {
     if (!scrollRef.current) return;
-    const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
-    const isAtBottom = scrollHeight - scrollTop - clientHeight < 50;
-    setIsAutoScroll(isAtBottom);
+    const { scrollTop } = scrollRef.current;
+    setIsAtTop(scrollTop < 50);
   };
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
+    <div className="relative flex min-h-0 flex-1 flex-col">
       {/* Header with inline compact legend */}
       <div className="mb-2">
         <div className="flex items-center justify-between">
@@ -102,23 +104,40 @@ export default function MessageLog({ messages }: MessageLogProps) {
             {/* Compact inline legend - all 4 statuses */}
             <div className="inline-legend flex items-center gap-2 font-[family-name:var(--font-pipboy)] text-[10px]">
               <div className="flex items-center gap-1" title="Ракетна загроза">
-                <span className="inline-block h-2 w-1 rounded-sm bg-[var(--pipboy-alert-red)]" style={{ boxShadow: "0 0 3px var(--pipboy-alert-red)" }} />
-                <span className="text-[var(--pipboy-alert-red)] opacity-70">Ракети</span>
+                <span
+                  className="inline-block h-2 w-1 rounded-sm bg-[var(--pipboy-alert-red)]"
+                  style={{ boxShadow: "0 0 3px var(--pipboy-alert-red)" }}
+                />
+                <span className="text-[var(--pipboy-alert-red)] opacity-70">
+                  Ракети
+                </span>
               </div>
               <div className="flex items-center gap-1" title="Тривога / БПЛА">
                 <span className="inline-block h-2 w-1 rounded-sm bg-[var(--pipboy-amber)]" />
-                <span className="text-[var(--pipboy-amber)] opacity-70">Тривога</span>
+                <span className="text-[var(--pipboy-amber)] opacity-70">
+                  Тривога
+                </span>
               </div>
               <div className="flex items-center gap-1" title="Відбій тривоги">
                 <span className="inline-block h-2 w-1 rounded-sm bg-[var(--pipboy-green)]" />
-                <span className="text-[var(--pipboy-green)] opacity-70">Відбій</span>
+                <span className="text-[var(--pipboy-green)] opacity-70">
+                  Відбій
+                </span>
               </div>
-              <div className="flex items-center gap-1" title="Системне повідомлення">
+              <div
+                className="flex items-center gap-1"
+                title="Системне повідомлення"
+              >
                 <span className="inline-block h-2 w-1 rounded-sm bg-[var(--pipboy-cyan)]" />
-                <span className="text-[var(--pipboy-cyan)] opacity-70">Інфо</span>
+                <span className="text-[var(--pipboy-cyan)] opacity-70">
+                  Інфо
+                </span>
               </div>
             </div>
-            <span className="glow-text font-[family-name:var(--font-pipboy)] text-[10px] opacity-50" title="Кількість повідомлень">
+            <span
+              className="glow-text font-[family-name:var(--font-pipboy)] text-[10px] opacity-50"
+              title="Кількість повідомлень"
+            >
               [{messages.length}]
             </span>
           </div>
@@ -132,10 +151,10 @@ export default function MessageLog({ messages }: MessageLogProps) {
         className="message-log-container flex-1 overflow-auto font-[family-name:var(--font-pipboy)]"
       >
         <div className="space-y-0.5">
-          {messages.map((msg, index) => {
+          {reversedMessages.map((msg, index) => {
             const threatLevel = getThreatLevel(msg.type);
             const icon = getMessageIcon(msg.type);
-            const isNew = index >= messages.length - 3;
+            const isNew = index < 3;
 
             return (
               <div
@@ -199,18 +218,18 @@ export default function MessageLog({ messages }: MessageLogProps) {
         </div>
       </div>
 
-      {/* Scroll indicator */}
-      {!isAutoScroll && (
+      {/* Scroll to top indicator */}
+      {!isAtTop && (
         <button
           onClick={() => {
             if (scrollRef.current) {
-              scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-              setIsAutoScroll(true);
+              scrollRef.current.scrollTop = 0;
+              setIsAtTop(true);
             }
           }}
-          className="scroll-to-bottom-btn"
+          className="scroll-to-top-btn"
         >
-          ↓ New messages
+          Нові повідомлення
         </button>
       )}
     </div>

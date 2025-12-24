@@ -88,6 +88,15 @@ export default function UkraineMap({ alertedRegions }: UkraineMapProps) {
               <div className="pulse-ring delay-2" />
             </div>
           )}
+
+          {/* Region info panel - centered relative to map */}
+          {selectedRegionData && (
+            <RegionInfoPanel
+              region={selectedRegionData}
+              isAlerted={alertedRegions.includes(selectedRegionData.id)}
+              onClose={() => setSelectedRegion(null)}
+            />
+          )}
         </div>
 
         {/* Right region list - hidden on mobile */}
@@ -110,15 +119,6 @@ export default function UkraineMap({ alertedRegions }: UkraineMapProps) {
         onRegionHover={setHoveredRegion}
         onRegionClick={handleRegionClick}
       />
-
-      {/* Region info panel */}
-      {selectedRegionData && (
-        <RegionInfoPanel
-          region={selectedRegionData}
-          isAlerted={alertedRegions.includes(selectedRegionData.id)}
-          onClose={() => setSelectedRegion(null)}
-        />
-      )}
 
       {/* Legend */}
       <div className="mt-4 flex justify-center gap-8 font-[family-name:var(--font-pipboy)] text-sm">
