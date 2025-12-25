@@ -817,7 +817,8 @@ body {
 }
 
 @keyframes arrow-bounce {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0);
   }
   50% {
@@ -1378,11 +1379,7 @@ body {
   left: 0;
   width: 4px;
   height: 4px;
-  background: linear-gradient(
-    135deg,
-    var(--pipboy-dark) 50%,
-    transparent 50%
-  );
+  background: linear-gradient(135deg, var(--pipboy-dark) 50%, transparent 50%);
   z-index: 1;
 }
 
@@ -1393,11 +1390,7 @@ body {
   right: 0;
   width: 4px;
   height: 4px;
-  background: linear-gradient(
-    315deg,
-    var(--pipboy-dark) 50%,
-    transparent 50%
-  );
+  background: linear-gradient(315deg, var(--pipboy-dark) 50%, transparent 50%);
   z-index: 1;
 }
 
@@ -1447,8 +1440,8 @@ body {
   text-align: right;
 }
 
-/* Pulse animation when count changes */
-.counter-pulse .counter-frame {
+/* Pulse animation when count changes - applied directly to frame with key-based re-mount */
+.counter-pulse {
   animation: counter-flash 0.6s ease-out;
 }
 
@@ -1459,7 +1452,9 @@ body {
 @keyframes counter-flash {
   0% {
     border-color: var(--pipboy-green-bright);
-    box-shadow: 0 0 8px var(--pipboy-green), inset 0 0 8px rgba(0, 255, 0, 0.15);
+    box-shadow:
+      0 0 8px var(--pipboy-green),
+      inset 0 0 8px rgba(0, 255, 0, 0.15);
   }
   100% {
     border-color: var(--pipboy-green-dark);
@@ -1470,7 +1465,9 @@ body {
 @keyframes value-highlight {
   0% {
     color: var(--pipboy-green-bright);
-    text-shadow: 0 0 12px var(--pipboy-green), 0 0 20px var(--pipboy-green);
+    text-shadow:
+      0 0 12px var(--pipboy-green),
+      0 0 20px var(--pipboy-green);
     transform: scale(1.1);
   }
   100% {

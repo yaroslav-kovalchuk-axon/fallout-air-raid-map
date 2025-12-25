@@ -18,28 +18,15 @@ interface MessageLogProps {
 }
 
 // Stylized message counter component in Pip-Boy style
+// Uses key-based animation: CSS animation replays when key changes
 function MessageCounter({ count }: { count: number }) {
-  const prevCount = useRef(count);
-  const [isAnimating, setIsAnimating] = useState(false);
-
-  useEffect(() => {
-    if (count !== prevCount.current) {
-      setIsAnimating(true);
-      const timer = setTimeout(() => setIsAnimating(false), 600);
-      prevCount.current = count;
-      return () => clearTimeout(timer);
-    }
-  }, [count]);
-
   // Format count with leading zeros for consistent width
   const formattedCount = count.toString().padStart(3, " ");
 
   return (
-    <div
-      className={`message-counter ${isAnimating ? "counter-pulse" : ""}`}
-      title="Кількість повідомлень"
-    >
-      <div className="counter-frame">
+    <div className="message-counter" title="Кількість повідомлень">
+      {/* Key forces re-mount on count change, restarting CSS animation */}
+      <div key={count} className="counter-frame counter-pulse">
         <div className="counter-scanline" />
         <span className="counter-label">REC</span>
         <span className="counter-value">{formattedCount}</span>
@@ -60,9 +47,7 @@ function SyncProgress({ cacheStatus }: { cacheStatus: CacheStatus }) {
     >
       <div className="sync-progress-scanline" />
       <div className="sync-text">
-        <span>
-          {isComplete ? "SYNC COMPLETE" : "SYNCING REGIONS"}
-        </span>
+        <span>{isComplete ? "SYNC COMPLETE" : "SYNCING REGIONS"}</span>
         <span className="sync-counter">
           {cachedRegions}/{totalRegions}
         </span>
@@ -177,7 +162,10 @@ export default function MessageLog({ messages, cacheStatus }: MessageLogProps) {
           <div className="flex items-center gap-5">
             {/* Compact inline legend - matching TimelineBar style */}
             <div className="flex items-center gap-4 font-[family-name:var(--font-pipboy)] text-[10px]">
-              <div className="flex items-center gap-1.5" title="Ракетна загроза">
+              <div
+                className="flex items-center gap-1.5"
+                title="Ракетна загроза"
+              >
                 <span
                   className="inline-block h-3 w-2 rounded-sm"
                   style={{
@@ -213,7 +201,10 @@ export default function MessageLog({ messages, cacheStatus }: MessageLogProps) {
                   Відбій
                 </span>
               </div>
-              <div className="flex items-center gap-1.5" title="Системне повідомлення">
+              <div
+                className="flex items-center gap-1.5"
+                title="Системне повідомлення"
+              >
                 <span
                   className="inline-block h-3 w-2 rounded-sm"
                   style={{
@@ -239,78 +230,78 @@ export default function MessageLog({ messages, cacheStatus }: MessageLogProps) {
           className="message-log-container absolute inset-0 overflow-y-auto font-[family-name:var(--font-pipboy)]"
         >
           <div className="space-y-0.5">
-          {messages.map((msg, index) => {
-            const threatLevel = getThreatLevel(msg.type);
-            const icon = getMessageIcon(msg.type);
-            const isNew = index < 3;
+            {messages.map((msg, index) => {
+              const threatLevel = getThreatLevel(msg.type);
+              const icon = getMessageIcon(msg.type);
+              const isNew = index < 3;
 
-            return (
-              <div
-                key={msg.id}
-                className={`message-log-entry-enhanced ${
-                  threatLevel === "high"
-                    ? "message-high"
-                    : threatLevel === "medium"
-                      ? "message-medium"
-                      : threatLevel === "clear"
-                        ? "message-clear"
-                        : ""
-                } ${isNew ? "message-new" : ""}`}
-                style={{ animationDelay: `${(index % 5) * 0.05}s` }}
-              >
-                {/* Threat indicator bar with tooltip */}
+              return (
                 <div
-                  className={`message-threat-bar threat-${threatLevel}`}
-                  title={getThreatLabel(threatLevel)}
-                />
-
-                {/* Icon */}
-                <span
-                  className={`message-icon ${
-                    threatLevel === "high" || threatLevel === "medium"
-                      ? "glow-text-red"
-                      : threatLevel === "clear"
-                        ? "glow-text-bright"
-                        : "glow-text"
-                  }`}
+                  key={msg.id}
+                  className={`message-log-entry-enhanced ${
+                    threatLevel === "high"
+                      ? "message-high"
+                      : threatLevel === "medium"
+                        ? "message-medium"
+                        : threatLevel === "clear"
+                          ? "message-clear"
+                          : ""
+                  } ${isNew ? "message-new" : ""}`}
+                  style={{ animationDelay: `${(index % 5) * 0.05}s` }}
                 >
-                  {icon}
-                </span>
+                  {/* Threat indicator bar with tooltip */}
+                  <div
+                    className={`message-threat-bar threat-${threatLevel}`}
+                    title={getThreatLabel(threatLevel)}
+                  />
 
-                {/* Timestamp */}
-                <span className="message-log-timestamp opacity-60">
-                  {formatTimestamp(msg.timestamp)}
-                </span>
+                  {/* Icon */}
+                  <span
+                    className={`message-icon ${
+                      threatLevel === "high" || threatLevel === "medium"
+                        ? "glow-text-red"
+                        : threatLevel === "clear"
+                          ? "glow-text-bright"
+                          : "glow-text"
+                    }`}
+                  >
+                    {icon}
+                  </span>
 
-                {/* Region name */}
-                <span
-                  className={`message-region font-medium ${
-                    msg.type === "alert_start" ||
-                    msg.type === "missile_detected"
-                      ? "glow-text-red-bright"
-                      : msg.type === "alert_end"
-                        ? "glow-text-bright"
-                        : "glow-text"
-                  }`}
-                >
-                  {msg.regionName}
-                </span>
+                  {/* Timestamp */}
+                  <span className="message-log-timestamp opacity-60">
+                    {formatTimestamp(msg.timestamp)}
+                  </span>
 
-                {/* Message text */}
-                <span
-                  className={`message-text ${
-                    msg.type === "alert_start" ||
-                    msg.type === "missile_detected"
-                      ? "text-[var(--pipboy-alert-red)] opacity-90"
-                      : msg.type === "alert_end"
-                        ? "text-[var(--pipboy-green-bright)] opacity-90"
-                        : "glow-text opacity-70"
-                  }`}
-                >
-                  {msg.message}
-                </span>
-              </div>
-            );
+                  {/* Region name */}
+                  <span
+                    className={`message-region font-medium ${
+                      msg.type === "alert_start" ||
+                      msg.type === "missile_detected"
+                        ? "glow-text-red-bright"
+                        : msg.type === "alert_end"
+                          ? "glow-text-bright"
+                          : "glow-text"
+                    }`}
+                  >
+                    {msg.regionName}
+                  </span>
+
+                  {/* Message text */}
+                  <span
+                    className={`message-text ${
+                      msg.type === "alert_start" ||
+                      msg.type === "missile_detected"
+                        ? "text-[var(--pipboy-alert-red)] opacity-90"
+                        : msg.type === "alert_end"
+                          ? "text-[var(--pipboy-green-bright)] opacity-90"
+                          : "glow-text opacity-70"
+                    }`}
+                  >
+                    {msg.message}
+                  </span>
+                </div>
+              );
             })}
           </div>
         </div>
